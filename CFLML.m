@@ -116,8 +116,8 @@ for count = 1:iteration
         ME = ME + weight * (MDi/wDi - MSi/wSi);
         MC = MC + weight * MSi/wSi; %(MDi + MSi)/(wDi + wSi);
     end
-    disp('nca probability: ');
-    disp(sum(prob));
+    strtmp=sprintf('nca probability: %.2f', sum(prob.^2));
+    disp(strtmp);
     
     [W D] = eig(ME, MC);
     [D, IDX] = sort(diag(D),'descend');
