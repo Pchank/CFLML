@@ -1,10 +1,10 @@
 %% configuration
-data = dlmread('data/ionosphere.data');
-projdim = 15;
-knearest = 3;
+data = dlmread('data/bals.data');
+projdim = 3;
+knearest = 5;
 EMitermax = 10;
 
-repeattime = 1;
+repeattime = 3;
 
 %% evaluation bench
 tic;
