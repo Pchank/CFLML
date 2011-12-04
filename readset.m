@@ -1,4 +1,4 @@
-function [trainset, testset] = readset(name)
+function [trainset, testset] = readset(name, prop)
 % initialization
 data=dlmread(name); % last attribute is the class number
 
@@ -14,7 +14,7 @@ for i=1:numberofclasses
     classset = data(data(:,end)==classes(i),:);
     sizeofclassdata = size(classset,1);
     
-    trainsampleidx = randsample(sizeofclassdata, floor(.7*sizeofclassdata));
+    trainsampleidx = randsample(sizeofclassdata, floor(prop*sizeofclassdata));
     trainset = [trainset; classset(trainsampleidx,:)];
     classset(trainsampleidx,:) = [];
     testset  = [testset; classset];
