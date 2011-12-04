@@ -1,10 +1,10 @@
 %% configuration
 data = dlmread('data/bals.data');
-projdim = 3;
+projdim = 4;
 knearest = 5;
 EMitermax = 10;
 
-repeattime = 3;
+repeattime = 10;
 
 %% evaluation bench
 tic;

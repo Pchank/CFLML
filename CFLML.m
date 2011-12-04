@@ -86,7 +86,7 @@ for count = 1:iteration+1
         labelbool = (G == labels(iclass));
         XR = Y{count}(labelbool,:);%X(labelbool,:)*M{end};        
         XQ = XR(active(allinstance(labelbool)),:);
-        [dannii, D] = knnsearch(XQ, XR , kn);
+        [dannii, D] = knnsearch(XQ, XR , kn+1); % degenerate preventation
         sigmanew(labelbool&active) = 2 * mean(D,2).^2;
     end
 
@@ -194,21 +194,35 @@ end
         
         YD = repmat(Y{midx}(i,:),sizeD,1) - YD;
         YS = repmat(Y{midx}(i,:),sizeS,1) - YS;
+
+        WMD = exp(-sum(YD.^2,2)/sg);
+        WMS = exp(-sum(YS.^2,2)/sg);        
+        wDi = sum(WMD);
+        wSi = sum(WMS);
         
         XD = X(IDD(DTAG),:);
         XS = X(IDD(STAG),:);
+        
+        ZD = (WMD/wDi)'*XD;
+        ZS = (WMS/wSi)'*XS;
 
-        XD = repmat(X(i,:),sizeD,1) - XD;
-        XS = repmat(X(i,:),sizeS,1) - XS;        
-        WMD = exp(-sum(YD.^2,2)/sg);
-        WMS = exp(-sum(YS.^2,2)/sg);
+        %XD = repmat(ZD,sizeD,1) - XD;
+        %XS = repmat(ZS,sizeS,1) - XS;
+        
+        ZD = ZD - X(i,:);
+        ZS = ZS - X(i,:);
+        
+        %lDi = exp(-sum(ZD.^2)/sg);
+        %lSi = exp(-sum(ZS.^2)/sg);
+               
+
+        %MDi = XD'*(repmat(WMD, 1, dim).*XD) + lDi*(ZD'*ZD);
+        %MSi = XS'*(repmat(WMS, 1, dim).*XS) + lSi*(ZS'*ZS);
+        MDi = wDi*(ZD'*ZD);
+        MSi = wSi*(ZS'*ZS);
+        
         
 
-        MDi = XD'*(repmat(WMD, 1, dim).*XD);
-        MSi = XS'*(repmat(WMS, 1, dim).*XS);
-        
-        wDi = sum(WMD);
-        wSi = sum(WMS);
     end
 end
 
