@@ -63,6 +63,7 @@ neighborsize = min(num,kn*100);
 
 validtesterr_backtrace = 1;
 
+
 strtmp = sprintf('EM-CFLML\tnca(log)\tvalid(%%)');
 disp(strtmp);
 
@@ -89,6 +90,7 @@ for count = 1:iteration+1
         sigmanew(labelbool&active) = 2 * mean(D,2).^2;
     end
 
+    %avgsigmanew = mean(sigmanew(active));
     
     for i=allinstance(active) % only to update active instance
         
@@ -98,12 +100,7 @@ for count = 1:iteration+1
             MIDX(i) = count;
             active(i) = false;
             continue;
-        end
-        
-        %wDi = 0;
-        %wSi = 0;
-        
-        %EM = M{end}*M{end}'; % test new metric for instance i
+        end       
         
         neighborweightupdate(count, sigmanew(i)); % init
         
@@ -119,15 +116,12 @@ for count = 1:iteration+1
             MIDX(i) = count;
         end
         
-        if (weight < 1E-10)
+        if (wDi < 1E-10 || weight < 1E-10)
             active(i) = false;
         end
         
-        %if (weight < 1E-5 || 1-weight < 1E-5) % inner point or noise point
-        %    active(i) =false;
-        %end
     end
-    %%
+
     %[metrixidx, asscount] = count_unique(metric);
     %disp([metrixidx'; asscount']);
     
@@ -136,14 +130,9 @@ for count = 1:iteration+1
     %% matrix assembly   
     for i=allinstance(active)
         
-        MDi = zeros(dim,dim);
-        wDi = 0;
-        MSi = zeros(dim,dim);
-        wSi = 0;
-        %EM = M{MIDX(i)}*M{MIDX(i)}';
         neighborupdate(MIDX(i), sigma(i));
         
-        weight = wDi/(wDi+wSi);
+        weight = wDi/(wDi+wSi);        
         
         ME = ME + weight * (MDi/wDi - MSi/wSi);
         MC = MC + weight * (MDi + MSi)/(wDi + wSi);
@@ -163,8 +152,7 @@ for count = 1:iteration+1
         validtesterr_backtrace = validtesterr;
     end
     [W D] = eig(ME, MC);
-    %dD = diag(D);
-    %dt = 1/ max(-dD(dD<0));
+    
     D(D<0) = 0;
     W= W*D; %% estimated optimal
     

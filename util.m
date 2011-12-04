@@ -1,10 +1,10 @@
 %% configuration
-data = dlmread('data/bals.data');
-projdim = 3;
-knearest = 5;
-EMitermax = 5;
+data = dlmread('data/lett.data');
+projdim = 16;
+knearest = 3;
+EMitermax = 10;
 
-repeattime = 10;
+repeattime = 1;
 
 %% evaluation bench
 tic;
@@ -34,7 +34,8 @@ for i = 1:repeattime;
     euctestclass = knnclassify(testset, trainset, trainlabel, knearest);      
     eucknnerr(end+1) = 1 - sum(euctestclass == testlabel)/numberoftestinstance;
 end
-strtmp = sprintf('k:%d\terr:%.2f(%.2f)%%\t%.2f(%.2f)%%', knearest, ...
+
+strtmp = sprintf('k:%d\nEM-CFLML err:%.2f(%.2f)%%\nEuclidean err:%.2f(%.2f)%%', knearest, ...
     100*mean(knnerr), 100*std(knnerr), 100*mean(eucknnerr), 100*std(eucknnerr));
 disp(strtmp);
 toc;
