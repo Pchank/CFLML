@@ -1,6 +1,6 @@
 %% configuration
-data = dlmread('data/lett.data');
-projdim = 16;
+data = dlmread('data/ionosphere.data');
+projdim = 15;
 knearest = 3;
 EMitermax = 10;
 
