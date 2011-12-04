@@ -7,19 +7,8 @@ addpath('count_unique');
 error(nargchk(2, 6, nargin));
 
 TotalData = varargin{1}; % dataset
-
-
 TotalLabel = varargin{2};% label info
-labels = unique(TotalLabel);% label set
-lnum = length(labels);% number of labels
-
-[X, Xidx] = cutset(TotalData, TotalLabel, .85);
-
-G = TotalLabel(Xidx);
-TotalData(Xidx,:) = []; TotalLabel(Xidx) = [];
-
-
-[num, dim] = size(X);% size dimension
+dim = size(TotalData,2);
 
 if nargin >2 % projection dimension
     m = min(varargin{3}, dim);
@@ -44,7 +33,22 @@ if nargin >5
 else
     iteration = 1;
 end
-%% matrix assembly
+
+labels = unique(TotalLabel);% label set
+lnum = length(labels);% number of labels
+
+if iteration == 1 % no EM steps, no validation set
+    [X, Xidx] = cutset(TotalData, TotalLabel, 1);    
+else
+    [X, Xidx] = cutset(TotalData, TotalLabel, .85);
+end
+
+G = TotalLabel(Xidx);
+TotalData(Xidx,:) = []; TotalLabel(Xidx) = [];
+
+
+num = size(X,1);% size dimension
+
 
 sigma = zeros(num,1); % estimated neighbor radius of instance
 sigmanew = zeros(num,1); % estimated neighbor radius of instance w.r.t new metric
@@ -52,28 +56,39 @@ prob = ones(num,1); % neighbor emphasis weight of instance
 MIDX = ones(num,1); % metric label of instance
 active = true(num,1); % active tag of instance
 updated = false(num,1); % updated tag of instance
+%XwDi = zeros(num,1);
+%XwSi = zeros(num,1);
 
+neighborsize = min(num,kn*100);
 
 validtesterr_backtrace = 1;
+
+strtmp = sprintf('EM-CFLML\tnca(log)\tvalid(%%)');
+disp(strtmp);
+
+XNR = knnsearch(X*M{1}, [] ,neighborsize);
 
 for count = 1:iteration+1
     % initialize neighbor radius
     %gradientcount = 1;
     %for newton = 1:gradientcount
+    
     ME = zeros(dim,dim);
     MC = zeros(dim,dim);
     
     allinstance = 1:num;
-    %%
+    
+    Y{count} = X*M{count};
+    
+    
     for iclass=1:lnum
         labelbool = (G == labels(iclass));
-        XR = X(labelbool,:)*M{end};
-        
+        XR = Y{count}(labelbool,:);%X(labelbool,:)*M{end};        
         XQ = XR(active(allinstance(labelbool)),:);
-        [notcareidx, D] = knnsearch(XQ, XR , kn);
+        [dannii, D] = knnsearch(XQ, XR , kn);
         sigmanew(labelbool&active) = 2 * mean(D,2).^2;
     end
-    %avgsigmametric{count} = mean(sigmanew(active));
+
     
     for i=allinstance(active) % only to update active instance
         
@@ -85,12 +100,12 @@ for count = 1:iteration+1
             continue;
         end
         
-        wDi = 0;
-        wSi = 0;
+        %wDi = 0;
+        %wSi = 0;
         
-        EM = M{end}*M{end}'; % test new metric for instance i
+        %EM = M{end}*M{end}'; % test new metric for instance i
         
-        neighborweightupdate(EM, sigmanew(i)); % init
+        neighborweightupdate(count, sigmanew(i)); % init
         
         weight = wDi/(wDi+wSi);
         
@@ -100,7 +115,7 @@ for count = 1:iteration+1
             updated(i) = false;
         else
             updated(i) = true;
-            prob(i) = weight;
+            prob(i) = weight;            
             MIDX(i) = count;
         end
         
@@ -118,15 +133,15 @@ for count = 1:iteration+1
     
     
     sigma(updated) = sigmanew(updated);
-    
+    %% matrix assembly   
     for i=allinstance(active)
         
         MDi = zeros(dim,dim);
         wDi = 0;
         MSi = zeros(dim,dim);
         wSi = 0;
-        EM = M{MIDX(i)}*M{MIDX(i)}';
-        neighborupdate(EM, sigma(i));
+        %EM = M{MIDX(i)}*M{MIDX(i)}';
+        neighborupdate(MIDX(i), sigma(i));
         
         weight = wDi/(wDi+wSi);
         
@@ -142,7 +157,7 @@ for count = 1:iteration+1
         MIDX = MIDX_backtrace;
         break;
     else
-        strtmp=sprintf('%.2f\t%.2f', sum(log(1-prob)), 100*validtesterr);
+        strtmp=sprintf('Iteration %d\t%.2f\t\t%.2f', count, sum(log(1-prob)), 100*validtesterr);
         disp(strtmp);
         MIDX_backtrace = MIDX;
         validtesterr_backtrace = validtesterr;
@@ -169,32 +184,43 @@ for count = 1:iteration+1
 end
 
 
-    function neighborweightupdate(metrictest, sg)
-        for j= 1:num
-            vector_ij = X(i,:)-X(j,:);
-            weight = exp(-(vector_ij*metrictest*vector_ij')/sg);
-            
-            if (G(j)~=G(i))
-                wDi = wDi + weight;
-            else
-                wSi = wSi + weight;
-            end
-        end
+    function neighborweightupdate(midx, sg)
+        IDD = XNR(i,:);        
+        YD = Y{midx}(IDD(G(IDD)~=G(i)),:);
+        YS = Y{midx}(IDD(G(IDD)==G(i)),:);                
+        
+        YD = repmat(Y{midx}(i,:),size(YD,1),1) - YD;
+        YS = repmat(Y{midx}(i,:),size(YS,1),1) - YS;
+        wDi = sum(exp(-sum(YD.^2,2)/sg));
+        wSi = sum(exp(-sum(YS.^2,2)/sg));       
     end
 
-    function neighborupdate(metrictest, sg)
-        for j=1:num
-            vector_ij = X(i,:)-X(j,:);
-            weight = exp(-(vector_ij*metrictest*vector_ij')/sg);
-            matrix = (vector_ij'*vector_ij);
-            if (G(j)~=G(i))
-                MDi = MDi + weight * matrix;
-                wDi = wDi + weight;
-            else
-                MSi = MSi + weight * matrix;
-                wSi = wSi + weight;
-            end
-        end
+    function neighborupdate(midx, sg)
+        IDD = XNR(i,:);
+        DTAG = G(IDD)~=G(i);
+        STAG = G(IDD)==G(i);
+        YD = Y{midx}(IDD(DTAG),:);
+        YS = Y{midx}(IDD(STAG),:);
+        sizeD = size(YD,1);
+        sizeS = size(YS,1);
+        
+        YD = repmat(Y{midx}(i,:),sizeD,1) - YD;
+        YS = repmat(Y{midx}(i,:),sizeS,1) - YS;
+        
+        XD = X(IDD(DTAG),:);
+        XS = X(IDD(STAG),:);
+
+        XD = repmat(X(i,:),sizeD,1) - XD;
+        XS = repmat(X(i,:),sizeS,1) - XS;        
+        WMD = exp(-sum(YD.^2,2)/sg);
+        WMS = exp(-sum(YS.^2,2)/sg);
+        
+
+        MDi = XD'*(repmat(WMD, 1, dim).*XD);
+        MSi = XS'*(repmat(WMS, 1, dim).*XS);
+        
+        wDi = sum(WMD);
+        wSi = sum(WMS);
     end
 end
 
