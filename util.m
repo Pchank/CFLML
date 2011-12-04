@@ -26,7 +26,7 @@ for i = 1:repeattime;
     numberoftraininstance = size(trainset,1);
     %% knn classification
     % CFLML 
-    [M MIDX R RC]= CFLML(trainset, trainlabel, projdim, knearest, eye(dimension), EMitermax);
+    [M MIDX R RC]= CFLML(trainset, trainlabel, projdim, knearest, eye(dimension), EMitermax);    
     testclass = knnclsmm(testset, R, RC, knearest, MIDX, M);
     knnerr(end+1) = 1 - sum(testclass == testlabel)/numberoftestinstance;
     
