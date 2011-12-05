@@ -147,7 +147,7 @@ for count = 1:iteration+1
     [validclass, valididxmetric] = knnclsmm(TotalData, X, G, kn, MIDX, M);
     validcorrectbool = validclass == TotalLabel;
     validtesterr = 1 - mean(validcorrectbool);
-    strtmp=sprintf('Iteration %d\t%.2E\t\t%.2f', count, sum(log(1-prob)), 100*validtesterr);
+    strtmp=sprintf('Iteration %d\t%.2E\t%.2f', count, sum(log(1-prob)), 100*validtesterr);
     disp(strtmp);
     if (validtesterr > validtesterr_backtrace && count ~=1) % overfitting!
         stepsout_count = stepsout_count +1;
