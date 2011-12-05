@@ -45,6 +45,7 @@ else
     [X, Xidx] = cutset(TotalData, TotalLabel, .85);
 end
 
+%% 
 G = TotalLabel(Xidx);
 TotalData(Xidx,:) = []; TotalLabel(Xidx) = [];
 
@@ -58,10 +59,11 @@ prob = ones(num,1); % neighbor emphasis weight of instance
 MIDX = ones(num,1); % metric label of instance
 active = true(num,1); % active tag of instance
 updated = false(num,1); % updated tag of instance
-%XwDi = zeros(num,1);
-%XwSi = zeros(num,1);
+
 
 neighborsize = min(num,kn*100);
+%XwDi = zeros(num, neighborsize);
+%XwSi = zeros(num, neighborsize);
 
 validtesterr_backtrace = 1;
 stepsout_backtrace = 1; % max backtrace iteration
@@ -102,15 +104,14 @@ for count = 1:iteration+1
         XR = Y{count}(labelbool(:,iclass),:);        
         XQ = XR(active(allinstance(labelbool(:,iclass))),:);
         [~, D] = knnsearch(XQ, XR , kn+1);
-        sigmanew(labelbool(:,iclass)&active) = 2 * mean(D,2).^2;
+        sigmanew(labelbool(:,iclass)&active) = 2 * (sum(D,2)/kn).^2;
     end
 
-    %avgsigmanew = mean(sigmanew(active));
     
     for i=allinstance(active) % only to update active instance
         
-        if (sigmanew(i) < 1E-10 )%< avgsigmametric{count} * 1E-5)
-            updated(i) = true;
+        if (sigmanew(i) < 1E-10 )
+            updated(i) = false;
             prob(i) = 0;
             MIDX(i) = count;
             active(i) = false;
@@ -132,6 +133,7 @@ for count = 1:iteration+1
         end
         
         if (wDi < 1E-10 || weight < 1E-10)
+            updated(i) = false;
             active(i) = false;
         end
         
@@ -139,9 +141,7 @@ for count = 1:iteration+1
 
     %[metrixidx, asscount] = count_unique(metric);
     %disp([metrixidx'; asscount']);
-    %if (sum(updated) == 0) 
-    %    break;
-    %end
+
     
     sigma(updated) = sigmanew(updated);  
     %% matrix assembly   
@@ -180,6 +180,10 @@ for count = 1:iteration+1
         validclasstrace = TotalLabel(validcorrectbool);
         stepsout_count = 0;
     end
+    if (sum(updated) == 0)
+        break;
+    end
+    
     [W D] = eig(ME, MC);
     
     D(D<0) = 0;
@@ -214,6 +218,7 @@ end
       
         YD = repmat(Y{midx}(i,:),size(YD,1),1) - YD;
         YS = repmat(Y{midx}(i,:),size(YS,1),1) - YS;
+        
         wDi = sum(exp(-sum(YD.^2,2)/sg));
         wSi = sum(exp(-sum(YS.^2,2)/sg));       
     end
@@ -239,7 +244,8 @@ end
         XS = X(IDD(ST(i,:)),:);
         
         %ZD = (WMD/wDi)'*XD;
-        ZS = (WMS/wSi)'*XS; %ZS = X(i,:);
+        %ZS = (WMS/wSi)'*XS; %
+        ZS = X(i,:);
 
         XD = repmat(ZS,sizeD,1) - XD;
         XS = repmat(ZS,sizeS,1) - XS;

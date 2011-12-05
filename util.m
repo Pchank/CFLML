@@ -1,10 +1,11 @@
 %% configuration
-data = dlmread('data/bals.data');
-projdim = 4;
-knearest = 5;
-EMitermax = 5;
+data = dlmread('data/lett.data');
+projdim = 16;
+knearest = 3;
+EMitermax = 10;
+trainprop = .75;
 
-repeattime = 10;
+repeattime = 1;
 
 %% evaluation bench
 tic;
@@ -14,7 +15,7 @@ for i = 1:repeattime;
     % data input and cut
     dataset = data(:,1:end-1);
     label = data(:,end);
-    [trainset, trainidx] = cutset(dataset, label, .85);
+    [trainset, trainidx] = cutset(dataset, label, trainprop);
     trainlabel = label(trainidx);
     dataset(trainidx,:) = [];
     label(trainidx) = [];
