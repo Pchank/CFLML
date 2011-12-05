@@ -62,6 +62,8 @@ updated = false(num,1); % updated tag of instance
 neighborsize = min(num,kn*100);
 
 validtesterr_backtrace = 1;
+stepsout_backtrace = 3;
+stepsout_count = 0;
 
 
 strtmp = sprintf('EM-CFLML\tnca(log)\tvalid(%%)');
@@ -124,7 +126,9 @@ for count = 1:iteration+1
 
     %[metrixidx, asscount] = count_unique(metric);
     %disp([metrixidx'; asscount']);
-    
+    %if (sum(updated) == 0) 
+    %    break;
+    %end
     
     sigma(updated) = sigmanew(updated);
     %% matrix assembly   
@@ -142,14 +146,18 @@ for count = 1:iteration+1
     
     validclass = knnclsmm(TotalData, X, G, kn, MIDX, M);
     validtesterr = 1 - mean(validclass == TotalLabel);
-    if (validtesterr >= validtesterr_backtrace && count ~=1) % overfitting!
-        MIDX = MIDX_backtrace;
-        break;
-    else
-        strtmp=sprintf('Iteration %d\t%.2f\t\t%.2f', count, sum(log(1-prob)), 100*validtesterr);
-        disp(strtmp);
+    strtmp=sprintf('Iteration %d\t%.2f\t\t%.2f', count, sum(log(1-prob)), 100*validtesterr);
+    disp(strtmp);
+    if (validtesterr > validtesterr_backtrace && count ~=1) % overfitting!
+        stepsout_count = stepsout_count +1;
+        if (stepsout_count >= stepsout_backtrace)
+            MIDX = MIDX_backtrace;            
+            break;
+        end
+    else        
         MIDX_backtrace = MIDX;
         validtesterr_backtrace = validtesterr;
+        stepsout_count = 0;
     end
     [W D] = eig(ME, MC);
     
@@ -169,8 +177,9 @@ for count = 1:iteration+1
         M{end+1} = W(:,1:m);
     end
     
+    
 end
-
+    M = M(1:length(M)-stepsout_count);
 
     function neighborweightupdate(midx, sg)
         IDD = XNR(i,:);        

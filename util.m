@@ -1,7 +1,7 @@
 %% configuration
-data = dlmread('data/lett.data');
-projdim = 16;
-knearest = 3;
+data = dlmread('data/bals.data');
+projdim = 3;
+knearest = 5;
 EMitermax = 10;
 
 repeattime = 1;
