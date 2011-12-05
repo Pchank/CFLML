@@ -9,6 +9,8 @@ error(nargchk(2, 6, nargin));
 TotalData = varargin{1}; % dataset
 TotalLabel = varargin{2};% label info
 dim = size(TotalData,2);
+labels = unique(TotalLabel);% label set
+lnum = length(labels);% number of labels
 
 if nargin >2 % projection dimension
     m = min(varargin{3}, dim);
@@ -34,8 +36,7 @@ else
     iteration = 1;
 end
 
-labels = unique(TotalLabel);% label set
-lnum = length(labels);% number of labels
+
 
 if iteration == 1 % no EM steps, no validation set
     [X, Xidx] = cutset(TotalData, TotalLabel, 1);    
@@ -91,7 +92,7 @@ for count = 1:iteration+1
         labelbool = (G == labels(iclass));
         XR = Y{count}(labelbool,:);%X(labelbool,:)*M{end};        
         XQ = XR(active(allinstance(labelbool)),:);
-        [dannii, D] = knnsearch(XQ, XR , kn+1); % degenerate preventation
+        [~, D] = knnsearch(XQ, XR , kn+1); % degenerate preventation
         sigmanew(labelbool&active) = 2 * mean(D,2).^2;
     end
 
@@ -180,7 +181,7 @@ for count = 1:iteration+1
     
     %end
     
-    [D, IDX] = sort(diag(D),'descend');
+    [~, IDX] = sort(diag(D),'descend');
     W = W(:,IDX);
     %disp('component intensity: ');
     %disp(D(D>0));%disp(sum(D(1:m)));
