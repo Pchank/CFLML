@@ -1,8 +1,8 @@
 %% configuration
-data = dlmread('data/spambase.data');
+data = dlmread('data/lett.data');
 projdim = 16;
-knearest = 5;
-EMitermax = 1;
+knearest = 1;
+EMitermax = 10;
 
 repeattime = 1;
 

@@ -123,8 +123,8 @@ else
         if fident
             d(k)=inf;
         end
-        %[s,t]=sort(d); % O(L*log(L))
-        [s, t] = mink(d, K, 1, 'sorting', false); % O(L+K*log(K))
+        [s,t]=sort(d); % O(L*log(L))
+        %[s, t] = mink(d, K, 1, 'sorting', false); % O(L+K*log(K))
         idx(k,:)=t(1:K);
         D(k,:)=s(1:K);
     end

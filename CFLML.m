@@ -62,24 +62,25 @@ updated = false(num,1); % updated tag of instance
 neighborsize = min(num,kn*100);
 
 validtesterr_backtrace = 1;
-stepsout_backtrace = 3; % max backtrace iteration
+stepsout_backtrace = 1; % max backtrace iteration
 stepsout_count = 0;
 
 
-strtmp = sprintf('EM-CFLML\tnca(log)\tvalid(%%)');
+strtmp = sprintf('EM-CFLML\tnca(log)\tvalid(%%)\ttime(s)');
 disp(strtmp);
 
 XNR = knnsearch(X*M{1}, [] ,neighborsize);
 
 
 for count = 1:iteration+1
-
+    tStart = tic;
     % initialize neighbor radius
     %gradientcount = 1;
     %for newton = 1:gradientcount
     
     ME = zeros(dim,dim);
     MC = zeros(dim,dim);
+
     
     allinstance = 1:num;
     
@@ -105,7 +106,7 @@ for count = 1:iteration+1
             active(i) = false;
             continue;
         end       
-        
+       
         neighborweightupdate(count, sigmanew(i)); % init
         
         weight = wDi/(wDi+wSi);
@@ -132,14 +133,16 @@ for count = 1:iteration+1
     %    break;
     %end
     
-    sigma(updated) = sigmanew(updated);
+    sigma(updated) = sigmanew(updated);  
     %% matrix assembly   
-    for i=allinstance(active)
+    for i=allinstance(active)       
+        MDi = zeros(dim,dim);
+        MSi = zeros(dim,dim);
         
         neighborupdate(MIDX(i), sigma(i));
         
         weight = wDi/(wDi+wSi);        
-        
+                
         ME = ME + MDi/(wDi+wSi) - weight * MSi/wSi;
         MC = MC + weight * (MDi + MSi)/(wDi + wSi);
         
@@ -150,7 +153,8 @@ for count = 1:iteration+1
 
     validcorrectbool = validclass == TotalLabel;
     validtesterr = 1 - mean(validcorrectbool);
-    strtmp=sprintf('Iteration %d\t%.2E\t%.2f', count, sum(log(1-prob)), 100*validtesterr);
+    tElapsed = toc(tStart);
+    strtmp=sprintf('Iteration %d\t%.2E\t%.2f\t\t%f', count, sum(log(1-prob)), 100*validtesterr, tElapsed);
     disp(strtmp);
     if (validtesterr > validtesterr_backtrace && count ~=1) % overfitting!
         stepsout_count = stepsout_count +1;
@@ -229,8 +233,8 @@ end
         XD = repmat(ZS,sizeD,1) - XD;
         XS = repmat(ZS,sizeS,1) - XS;
 
-        MDi = XD'*(repmat(WMD, 1, dim).*XD);
-        MSi = XS'*(repmat(WMS, 1, dim).*XS);
+        MDi = MDi + XD'*(repmat(WMD, 1, dim).*XD);
+        MSi = MSi + XS'*(repmat(WMS, 1, dim).*XS);        
        
     end
 end
