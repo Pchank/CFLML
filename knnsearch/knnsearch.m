@@ -114,6 +114,7 @@ if K==1
         [D(k),idx(k)]=min(d);
     end
 else
+        
     for k=1:N
         d=zeros(L,1);
         for t=1:M
@@ -122,7 +123,8 @@ else
         if fident
             d(k)=inf;
         end
-        [s,t]=sort(d);
+        %[s,t]=sort(d); % O(L*log(L))
+        [s, t] = mink(d, K, 1, 'sorting', false); % O(L+K*log(K))
         idx(k,:)=t(1:K);
         D(k,:)=s(1:K);
     end

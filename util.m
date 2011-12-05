@@ -1,8 +1,8 @@
 %% configuration
 data = dlmread('data/spambase.data');
 projdim = 16;
-knearest = 7;
-EMitermax = 10;
+knearest = 5;
+EMitermax = 1;
 
 repeattime = 1;
 
@@ -33,6 +33,7 @@ for i = 1:repeattime;
     % Euclidean
     euctestclass = knnclassify(testset, trainset, trainlabel, knearest);      
     eucknnerr(end+1) = 1 - sum(euctestclass == testlabel)/numberoftestinstance;
+    
 end
 
 strtmp = sprintf('k:%d\nEM-CFLML err:%.2f(%.2f)%%\nEuclidean err:%.2f(%.2f)%%', knearest, ...

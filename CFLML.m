@@ -62,7 +62,7 @@ updated = false(num,1); % updated tag of instance
 neighborsize = min(num,kn*100);
 
 validtesterr_backtrace = 1;
-stepsout_backtrace = 1; % max backtrace iteration
+stepsout_backtrace = 3; % max backtrace iteration
 stepsout_count = 0;
 
 
@@ -71,7 +71,9 @@ disp(strtmp);
 
 XNR = knnsearch(X*M{1}, [] ,neighborsize);
 
+
 for count = 1:iteration+1
+
     % initialize neighbor radius
     %gradientcount = 1;
     %for newton = 1:gradientcount
@@ -83,7 +85,7 @@ for count = 1:iteration+1
     
     Y{count} = X*M{count};
     
-    
+
     for iclass=1:lnum
         labelbool = (G == labels(iclass));
         XR = Y{count}(labelbool,:);%X(labelbool,:)*M{end};        
@@ -138,13 +140,14 @@ for count = 1:iteration+1
         
         weight = wDi/(wDi+wSi);        
         
-        ME = ME + weight * (MDi/wDi - MSi/wSi);
+        ME = ME + MDi/(wDi+wSi) - weight * MSi/wSi;
         MC = MC + weight * (MDi + MSi)/(wDi + wSi);
         
     end
     
-    
+
     [validclass, valididxmetric] = knnclsmm(TotalData, X, G, kn, MIDX, M);
+
     validcorrectbool = validclass == TotalLabel;
     validtesterr = 1 - mean(validcorrectbool);
     strtmp=sprintf('Iteration %d\t%.2E\t%.2f', count, sum(log(1-prob)), 100*validtesterr);
@@ -181,7 +184,6 @@ for count = 1:iteration+1
         M{end+1} = W(:,1:m);
     end
     
-    
 end
     M = M(1:length(M)-stepsout_count);
     X = [X; validdatatrace];    
@@ -193,8 +195,8 @@ end
     function neighborweightupdate(midx, sg)
         IDD = XNR(i,:);        
         YD = Y{midx}(IDD(G(IDD)~=G(i)),:);
-        YS = Y{midx}(IDD(G(IDD)==G(i)),:);                
-        
+        YS = Y{midx}(IDD(G(IDD)==G(i)),:);     
+      
         YD = repmat(Y{midx}(i,:),size(YD,1),1) - YD;
         YS = repmat(Y{midx}(i,:),size(YS,1),1) - YS;
         wDi = sum(exp(-sum(YD.^2,2)/sg));
@@ -226,21 +228,10 @@ end
 
         XD = repmat(ZS,sizeD,1) - XD;
         XS = repmat(ZS,sizeS,1) - XS;
-        
-        %ZD = ZD - X(i,:);
-        %ZS = ZS - X(i,:);
-        
-        %lDi = exp(-sum(ZD.^2)/sg);
-        %lSi = exp(-sum(ZS.^2)/sg);
-               
 
         MDi = XD'*(repmat(WMD, 1, dim).*XD);
         MSi = XS'*(repmat(WMS, 1, dim).*XS);
-        %MDi = wDi*(ZD'*ZD);
-        %MSi = wSi*(ZS'*ZS);
-        
-        
-
+       
     end
 end
 
