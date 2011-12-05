@@ -1,4 +1,4 @@
-function C = knnclsmm( test, train, group, k,  MIDX, M)
+function [C idxmetric] = knnclsmm( test, train, group, k,  MIDX, M)
 % KNNCLSMM knn classifier for multiple metric
 addpath('knnsearch');
 addpath('count_unique');

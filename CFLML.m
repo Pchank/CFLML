@@ -62,7 +62,7 @@ updated = false(num,1); % updated tag of instance
 neighborsize = min(num,kn*100);
 
 validtesterr_backtrace = 1;
-stepsout_backtrace = 3;
+stepsout_backtrace = 1; % max backtrace iteration
 stepsout_count = 0;
 
 
@@ -144,9 +144,10 @@ for count = 1:iteration+1
     end
     
     
-    validclass = knnclsmm(TotalData, X, G, kn, MIDX, M);
-    validtesterr = 1 - mean(validclass == TotalLabel);
-    strtmp=sprintf('Iteration %d\t%.2f\t\t%.2f', count, sum(log(1-prob)), 100*validtesterr);
+    [validclass, valididxmetric] = knnclsmm(TotalData, X, G, kn, MIDX, M);
+    validcorrectbool = validclass == TotalLabel;
+    validtesterr = 1 - mean(validcorrectbool);
+    strtmp=sprintf('Iteration %d\t%.2E\t\t%.2f', count, sum(log(1-prob)), 100*validtesterr);
     disp(strtmp);
     if (validtesterr > validtesterr_backtrace && count ~=1) % overfitting!
         stepsout_count = stepsout_count +1;
@@ -157,6 +158,9 @@ for count = 1:iteration+1
     else        
         MIDX_backtrace = MIDX;
         validtesterr_backtrace = validtesterr;
+        validdatatrace = TotalData(validcorrectbool,:);
+        validmetrictrace = valididxmetric(validcorrectbool);
+        validclasstrace = TotalLabel(validcorrectbool);
         stepsout_count = 0;
     end
     [W D] = eig(ME, MC);
@@ -180,6 +184,11 @@ for count = 1:iteration+1
     
 end
     M = M(1:length(M)-stepsout_count);
+    X = [X; validdatatrace];    
+    MIDX = [MIDX; validmetrictrace];
+    G = [G;validclasstrace];
+    
+    
 
     function neighborweightupdate(midx, sg)
         IDD = XNR(i,:);        
