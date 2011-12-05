@@ -10,6 +10,7 @@ TotalData = varargin{1}; % dataset
 TotalLabel = varargin{2};% label info
 dim = size(TotalData,2);
 labels = unique(TotalLabel);% label set
+
 lnum = length(labels);% number of labels
 
 if nargin >2 % projection dimension
@@ -70,7 +71,19 @@ stepsout_count = 0;
 strtmp = sprintf('EM-CFLML\tnca(log)\tvalid(%%)\ttime(s)');
 disp(strtmp);
 
-XNR = knnsearch(X*M{1}, [] ,neighborsize);
+
+Y{1} = X*M{1};
+
+tic;
+XNR = knnsearch(Y{1}, Y{1} ,neighborsize);
+toc;
+
+ST = G(XNR)==repmat(G, 1, neighborsize);
+
+labelbool = false(num, lnum);
+for iclass = 1:lnum
+    labelbool(:,iclass) = (G == labels(iclass));
+end
 
 
 for count = 1:iteration+1
@@ -83,17 +96,13 @@ for count = 1:iteration+1
     MC = zeros(dim,dim);
 
     
-    allinstance = 1:num;
-    
-    Y{count} = X*M{count};
-    
+    allinstance = 1:num;        
 
     for iclass=1:lnum
-        labelbool = (G == labels(iclass));
-        XR = Y{count}(labelbool,:);%X(labelbool,:)*M{end};        
-        XQ = XR(active(allinstance(labelbool)),:);
-        [~, D] = knnsearch(XQ, XR , kn+1); % degenerate preventation
-        sigmanew(labelbool&active) = 2 * mean(D,2).^2;
+        XR = Y{count}(labelbool(:,iclass),:);        
+        XQ = XR(active(allinstance(labelbool(:,iclass))),:);
+        [~, D] = knnsearch(XQ, XR , kn+1);
+        sigmanew(labelbool(:,iclass)&active) = 2 * mean(D,2).^2;
     end
 
     %avgsigmanew = mean(sigmanew(active));
@@ -187,7 +196,8 @@ for count = 1:iteration+1
     %disp(D(D>0));%disp(sum(D(1:m)));
     if (count ~= iteration+1)
         M{end+1} = W(:,1:m);
-    end
+        Y{end+1} = X*M{end};
+    end        
     
 end
     M = M(1:length(M)-stepsout_count);
@@ -199,8 +209,8 @@ end
 
     function neighborweightupdate(midx, sg)
         IDD = XNR(i,:);        
-        YD = Y{midx}(IDD(G(IDD)~=G(i)),:);
-        YS = Y{midx}(IDD(G(IDD)==G(i)),:);     
+        YD = Y{midx}(IDD(~ST(i,:)),:);
+        YS = Y{midx}(IDD(ST(i,:)),:);     
       
         YD = repmat(Y{midx}(i,:),size(YD,1),1) - YD;
         YS = repmat(Y{midx}(i,:),size(YS,1),1) - YS;
@@ -210,10 +220,9 @@ end
 
     function neighborupdate(midx, sg)
         IDD = XNR(i,:);
-        DTAG = G(IDD)~=G(i);
-        STAG = G(IDD)==G(i);
-        YD = Y{midx}(IDD(DTAG),:);
-        YS = Y{midx}(IDD(STAG),:);
+        YD = Y{midx}(IDD(~ST(i,:)),:);
+        YS = Y{midx}(IDD(ST(i,:)),:);
+        
         sizeD = size(YD,1);
         sizeS = size(YS,1);
         
@@ -221,21 +230,22 @@ end
         YS = repmat(Y{midx}(i,:),sizeS,1) - YS;
 
         WMD = exp(-sum(YD.^2,2)/sg);
-        WMS = exp(-sum(YS.^2,2)/sg);        
+        WMS = exp(-sum(YS.^2,2)/sg);
+        
         wDi = sum(WMD);
         wSi = sum(WMS);
         
-        XD = X(IDD(DTAG),:);
-        XS = X(IDD(STAG),:);
+        XD = X(IDD(~ST(i,:)),:);
+        XS = X(IDD(ST(i,:)),:);
         
         %ZD = (WMD/wDi)'*XD;
-        ZS = (WMS/wSi)'*XS;
+        ZS = (WMS/wSi)'*XS; %ZS = X(i,:);
 
         XD = repmat(ZS,sizeD,1) - XD;
         XS = repmat(ZS,sizeS,1) - XS;
 
-        MDi = MDi + XD'*(repmat(WMD, 1, dim).*XD);
-        MSi = MSi + XS'*(repmat(WMS, 1, dim).*XS);        
+        MDi = MDi + XD' * (repmat(WMD, 1, dim).* XD);
+        MSi = MSi + XS' * (repmat(WMS, 1, dim).* XS);        
        
     end
 end

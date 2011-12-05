@@ -98,36 +98,39 @@ error(nargoutchk(0,2,nargout));
 % C2 = sum(C.*C,2)';
 [N,M] = size(Q);
 L=size(R,1);
-idx = zeros(N,K);
-D = idx;
+
+dist = zeros(L,N);
+for k=1:N
+    for t=1:M
+        dist(:,k) = dist(:,k) + (R(:,t)-Q(k,t)).^2;
+    end
+    if fident
+        dist(k,k) = inf;
+    end
+end
 
 if K==1
-    % Loop for each query point
-    for k=1:N
-        d=zeros(L,1);
-        for t=1:M
-            d=d+(R(:,t)-Q(k,t)).^2;
-        end
-        if fident
-            d(k)=inf;
-        end
-        [D(k),idx(k)]=min(d);
-    end
-else
-        
-    for k=1:N
-        d=zeros(L,1);
-        for t=1:M
-            d=d+(R(:,t)-Q(k,t)).^2;
-        end
-        if fident
-            d(k)=inf;
-        end
-        [s,t]=sort(d); % O(L*log(L))
-        %[s, t] = mink(d, K, 1, 'sorting', false); % O(L+K*log(K))
-        idx(k,:)=t(1:K);
-        D(k,:)=s(1:K);
-    end
+    [D, idx] = min(dist);
+    D = D';
+    idx = idx';
+else         
+    [D, idx] = mink(dist, K, 1,'sorting',false);
+    D = D';
+    idx = idx';
+    
+%     for k=1:N
+%         d=zeros(L,1);
+%         for t=1:M
+%             d=d+(R(:,t)-Q(k,t)).^2;
+%         end
+%         if fident
+%             d(k)=inf;
+%         end
+%         [s,t]=sort(d); % O(L*log(L))
+%         %[s, t] = mink(d, K, 1, 'sorting', false); % O(L+K*log(K))
+%         idx(k,:)=t(1:K);
+%         D(k,:)=s(1:K);
+%     end
 end
 if nargout>1
     D=sqrt(D);
