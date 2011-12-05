@@ -203,23 +203,23 @@ end
         XD = X(IDD(DTAG),:);
         XS = X(IDD(STAG),:);
         
-        ZD = (WMD/wDi)'*XD;
+        %ZD = (WMD/wDi)'*XD;
         ZS = (WMS/wSi)'*XS;
 
-        %XD = repmat(ZD,sizeD,1) - XD;
-        %XS = repmat(ZS,sizeS,1) - XS;
+        XD = repmat(ZS,sizeD,1) - XD;
+        XS = repmat(ZS,sizeS,1) - XS;
         
-        ZD = ZD - X(i,:);
-        ZS = ZS - X(i,:);
+        %ZD = ZD - X(i,:);
+        %ZS = ZS - X(i,:);
         
         %lDi = exp(-sum(ZD.^2)/sg);
         %lSi = exp(-sum(ZS.^2)/sg);
                
 
-        %MDi = XD'*(repmat(WMD, 1, dim).*XD) + lDi*(ZD'*ZD);
-        %MSi = XS'*(repmat(WMS, 1, dim).*XS) + lSi*(ZS'*ZS);
-        MDi = wDi*(ZD'*ZD);
-        MSi = wSi*(ZS'*ZS);
+        MDi = XD'*(repmat(WMD, 1, dim).*XD);
+        MSi = XS'*(repmat(WMS, 1, dim).*XS);
+        %MDi = wDi*(ZD'*ZD);
+        %MSi = wSi*(ZS'*ZS);
         
         
 
