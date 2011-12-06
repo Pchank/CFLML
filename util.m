@@ -3,7 +3,7 @@ data = dlmread('data/lett.data');
 projdim = 16;
 knearest = 3;
 EMitermax = 10;
-trainprop = .75;
+trainprop = .85;
 
 repeattime = 1;
 

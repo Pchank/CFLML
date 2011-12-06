@@ -1,9 +1,13 @@
 function [M MIDX X G]= CFLML( varargin)
-% Closed-Form Local Metric Learning, Jianbo YE(jbye@cs.hku.hk)
-addpath('knnsearch');% knn lib
-addpath('count_unique');
-%% parse input and initialization
+% Expectation-Maximization Closed-Form Local Metric Learning
+% Author: Jianbo YE(jbye@cs.hku.hk), Dept of Computer Science, HKU
+% Examples
 
+% KNN search is very crucial for the efficient implement of this algorithm
+addpath('knnsearch');% knn implement path
+addpath('count_unique');% useful routine to obtain count of unique;
+
+% Parse input arguments
 error(nargchk(2, 6, nargin));
 
 TotalData = varargin{1}; % dataset
@@ -38,15 +42,15 @@ else
 end
 
 
-
+% cut data into trainset and validset
 if iteration == 1 % no EM steps, no validation set
     [X, Xidx] = cutset(TotalData, TotalLabel, 1);    
 else
     [X, Xidx] = cutset(TotalData, TotalLabel, .85);
 end
 
-%% 
-G = TotalLabel(Xidx);
+% initialization part starts here
+G = TotalLabel(Xidx); %labels for trainset
 TotalData(Xidx,:) = []; TotalLabel(Xidx) = [];
 
 
@@ -60,28 +64,33 @@ MIDX = ones(num,1); % metric label of instance
 active = true(num,1); % active tag of instance
 updated = false(num,1); % updated tag of instance
 
-
-neighborsize = min(num,kn*100);
+% size of neighbor estimated. For large size of data, a small neighbor is
+% enough, like 10 times k-nearests.
+neighborsize = min(num,kn*100); 
 %XwDi = zeros(num, neighborsize);
 %XwSi = zeros(num, neighborsize);
 
+% backtrace init
 validtesterr_backtrace = 1;
 stepsout_backtrace = 1; % max backtrace iteration
 stepsout_count = 0;
 
-
+% status output
 strtmp = sprintf('EM-CFLML\tnca(log)\tvalid(%%)\ttime(s)');
 disp(strtmp);
 
-
+% apply init metric transform
 Y{1} = X*M{1};
 
 tic;
+% knnsearch to contruct neighbor
 XNR = knnsearch(Y{1}, Y{1} ,neighborsize);
 toc;
 
+% the same(or not) labels of neighbor
 ST = G(XNR)==repmat(G, 1, neighborsize);
 
+% bool check for each label
 labelbool = false(num, lnum);
 for iclass = 1:lnum
     labelbool(:,iclass) = (G == labels(iclass));
@@ -94,12 +103,14 @@ for count = 1:iteration+1
     %gradientcount = 1;
     %for newton = 1:gradientcount
     
+    % matrix to assembly
     ME = zeros(dim,dim);
     MC = zeros(dim,dim);
 
     
     allinstance = 1:num;        
 
+    % compute k-neighbor radius w.r.t new metric
     for iclass=1:lnum
         XR = Y{count}(labelbool(:,iclass),:);        
         XQ = XR(active(allinstance(labelbool(:,iclass))),:);
@@ -107,7 +118,7 @@ for count = 1:iteration+1
         sigmanew(labelbool(:,iclass)&active) = 2 * (sum(D,2)/kn).^2;
     end
 
-    
+    % test if the new metric is more fitted to certain instance
     for i=allinstance(active) % only to update active instance
         
         if (sigmanew(i) < 1E-10 )
@@ -142,23 +153,7 @@ for count = 1:iteration+1
     %[metrixidx, asscount] = count_unique(metric);
     %disp([metrixidx'; asscount']);
 
-    
-    sigma(updated) = sigmanew(updated);  
-    %% matrix assembly   
-    for i=allinstance(active)       
-        MDi = zeros(dim,dim);
-        MSi = zeros(dim,dim);
-        
-        neighborupdate(MIDX(i), sigma(i));
-        
-        weight = wDi/(wDi+wSi);        
-                
-        ME = ME + MDi/(wDi+wSi) - weight * MSi/wSi;
-        MC = MC + weight * (MDi + MSi)/(wDi + wSi);
-        
-    end
-    
-
+    % metric validation start
     [validclass, valididxmetric] = knnclsmm(TotalData, X, G, kn, MIDX, M);
 
     validcorrectbool = validclass == TotalLabel;
@@ -180,22 +175,51 @@ for count = 1:iteration+1
         validclasstrace = TotalLabel(validcorrectbool);
         stepsout_count = 0;
     end
+    
     if (sum(updated) == 0)
         break;
+    end        
+    
+    sigma(updated) = sigmanew(updated);
+    
+    %avgsigma = 2 * max(sigma(active))/9;
+    
+    
+    
+    % matrix assembly start  
+    for i=allinstance(active)
+        % to prevent degenerate cases like []
+        MDi = zeros(dim,dim);
+        MSi = zeros(dim,dim);
+        
+        neighborupdate(MIDX(i), sigma(i));
+        
+        weight = wDi/(wDi+wSi);        
+                
+        % the coefficient is carefully designed to achieve most robustness.
+        % performance and stability.
+        ME = ME + (MDi/(wDi+wSi) - (weight/wSi) * MSi);
+        MC = MC + (weight /(wDi + wSi)) * (MDi + MSi);
+        
     end
     
+
+    % closed-form estimated of the optimal metric
     [W D] = eig(ME, MC);
-    
-    D(D<0) = 0;
-    W= W*D; %% estimated optimal
-    
-    
-    
-    
-    %end
-    
-    [~, IDX] = sort(diag(D),'descend');
+
+    % sort
+    [D, IDX] = sort(diag(D),'descend');
     W = W(:,IDX);
+    
+    % estimated optimal coefficient should be carefully designed
+    % disp(D);
+    D(D<0) = 0;
+    %disp(D);
+    %D = D./(1 + (max(D)/10./D).^4);
+    W= W*diag(D); 
+    
+
+    
     %disp('component intensity: ');
     %disp(D(D>0));%disp(sum(D(1:m)));
     if (count ~= iteration+1)
@@ -204,6 +228,7 @@ for count = 1:iteration+1
     end        
     
 end
+    % append validset to reference set.
     M = M(1:length(M)-stepsout_count);
     X = [X; validdatatrace];    
     MIDX = [MIDX; validmetrictrace];
@@ -244,8 +269,8 @@ end
         XS = X(IDD(ST(i,:)),:);
         
         %ZD = (WMD/wDi)'*XD;
-        %ZS = (WMS/wSi)'*XS; %
-        ZS = X(i,:);
+        ZS = (WMS/wSi)'*XS; %
+        %ZS = X(i,:);
 
         XD = repmat(ZS,sizeD,1) - XD;
         XS = repmat(ZS,sizeS,1) - XS;
