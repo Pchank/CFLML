@@ -1,8 +1,8 @@
 %% configuration
-data = dlmread('data/lett.data');
-projdim = 16;
-knearest = 3;
-EMitermax = 10;
+data = dlmread('data/usps.data');
+projdim = 128;
+knearest = 5;
+EMitermax = 5;
 trainprop = .85;
 
 repeattime = 1;
@@ -27,9 +27,9 @@ for i = 1:repeattime;
     numberoftraininstance = size(trainset,1);
     %% knn classification
     % CFLML 
-    [M MIDX R RC]= CFLML(trainset, trainlabel, projdim, knearest, eye(dimension), EMitermax);    
-    testclass = knnclsmm(testset, R, RC, knearest, MIDX, M);
-    knnerr(end+1) = 1 - sum(testclass == testlabel)/numberoftestinstance;
+    %[M MIDX R RC]= CFLML(trainset, trainlabel, projdim, knearest, eye(dimension), EMitermax);    
+    %testclass = knnclsmm(testset, R, RC, knearest, MIDX, M);
+    %knnerr(end+1) = 1 - sum(testclass == testlabel)/numberoftestinstance;
     
     % Euclidean
     euctestclass = knnclassify(testset, trainset, trainlabel, knearest);      

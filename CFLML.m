@@ -143,7 +143,7 @@ for count = 1:iteration+1
             MIDX(i) = count;
         end
         
-        if (wDi < 1E-10 || weight < 1E-10)
+        if (wDi < 1E-3 || weight < 1E-3)
             updated(i) = false;
             active(i) = false;
         end
