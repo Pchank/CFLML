@@ -55,6 +55,7 @@ TotalData(Xidx,:) = []; TotalLabel(Xidx) = [];
 
 
 num = size(X,1);% size dimension
+vnum = size(TotalData,1);
 
 
 sigma = zeros(num,1); % estimated neighbor radius of instance
@@ -72,8 +73,11 @@ neighborsize = min(num,kn*100);
 
 % backtrace init
 validtesterr_backtrace = 1;
-stepsout_backtrace = 1; % max backtrace iteration
+stepsout_backtrace = 3; % max backtrace iteration
 stepsout_count = 0;
+validcandidateidx = cell(0);
+validclasscandidate = zeros(vnum, 0);
+
 
 % status output
 strtmp = sprintf('EM-CFLML\tnca(log)\tvalid(%%)\ttime(s)');
@@ -85,6 +89,7 @@ Y{1} = X*M{1};
 tic;
 % knnsearch to contruct neighbor
 XNR = knnsearch(Y{1}, Y{1} ,neighborsize);
+YNR = knnsearch(TotalData*M{1},Y{1},neighborsize); % for valid evalution
 toc;
 
 % the same(or not) labels of neighbor
@@ -102,7 +107,6 @@ for count = 1:iteration+1
     % initialize neighbor radius
     %gradientcount = 1;
     %for newton = 1:gradientcount
-    
     % matrix to assembly
     ME = zeros(dim,dim);
     MC = zeros(dim,dim);
@@ -149,13 +153,35 @@ for count = 1:iteration+1
         end
         
     end
-
+    
+    
     %[metrixidx, asscount] = count_unique(metric);
     %disp([metrixidx'; asscount']);
 
     % metric validation start
-    [validclass, valididxmetric] = knnclsmm(TotalData, X, G, kn, MIDX, M);
-
+    %[validclass, valididxmetric] = knnclsmm(TotalData, X, G, kn, MIDX, M, YNR);
+    validclass = zeros(vnum,1);
+    validclasscandidateweight = zeros(vnum, count);
+    for i = 1:count        
+        if i==count
+            validcandidateidx{count} = knnsearch(TotalData*M{i}, X*M{i}, kn, YNR);            
+            validclasscandidate(:,count) = zeros(vnum,1);
+            for j=1:vnum
+                [classname numclass] = count_unique(G(validcandidateidx{count}(j,:)));
+                [~, idxcls] = max(numclass);
+                validclasscandidate(j,count) = classname(idxcls);        
+            end
+        end
+        
+        for j = 1:vnum                                    
+            validclasscandidateweight(j,i) = sum(MIDX(validcandidateidx{i}(j,:)) == i);
+        end
+    end
+    [~, valididxmetric] = max(validclasscandidateweight, [], 2);
+    for j=1:vnum
+        validclass(j) = validclasscandidate(j,valididxmetric(j));
+    end   
+    
     validcorrectbool = validclass == TotalLabel;
     validtesterr = 1 - mean(validcorrectbool);
     tElapsed = toc(tStart);
@@ -180,6 +206,8 @@ for count = 1:iteration+1
         break;
     end        
     
+    
+    
     sigma(updated) = sigmanew(updated);
     
     %avgsigma = 2 * max(sigma(active))/9;
@@ -192,14 +220,15 @@ for count = 1:iteration+1
         MDi = zeros(dim,dim);
         MSi = zeros(dim,dim);
         
-        neighborupdate(MIDX(i), sigma(i));
+        %neighborupdate(MIDX(i), sigma(i));
+        neighborupdate(count,sigmanew(i));
         
         weight = wDi/(wDi+wSi);        
                 
         % the coefficient is carefully designed to achieve most robustness.
         % performance and stability.
-        ME = ME + (MDi/(wDi+wSi) - (weight/wSi) * MSi);
-        MC = MC + (weight /(wDi + wSi)) * (MDi + MSi);
+        ME = ME + prob(i)/weight * (MDi/(wDi+wSi) - (weight/wSi) * MSi);
+        MC = MC + (prob(i) /(wDi + wSi)) * (MDi + MSi);
         
     end
     

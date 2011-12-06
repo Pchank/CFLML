@@ -3,7 +3,7 @@ function [idx,D]=knnsearch(varargin)
 % IDX = knnsearch(Q,R,K) searches the reference data set R (n x d array
 % representing n points in a d-dimensional space) to find the k-nearest
 % neighbors of each query point represented by eahc row of Q (m x d array).
-% The results are stored in the (m x K) index array, IDX. 
+% The results are stored in the (m x K) index array, IDX.
 %
 % IDX = knnsearch(Q,R) takes the default value K=1.
 %
@@ -15,7 +15,7 @@ function [idx,D]=knnsearch(varargin)
 % suitable for small data sets. However, other advanced approaches, such as
 % kd-tree and delaunary become inefficient when d is large comparing to the
 % number of data points. On the other hand, the linear search in MATLAB is
-% relatively insensitive to d due to the vectorization. In  this code, the 
+% relatively insensitive to d due to the vectorization. In  this code, the
 % efficiency of linear search is further improved by using the JIT
 % aceeleration of MATLAB. Numerical example shows that its performance is
 % comparable with kd-tree algorithm in mex.
@@ -73,8 +73,8 @@ fprintf('Are both indices the same? %d\n',isequal(idx,idx1));
 fprintf('CPU time for knnsearch = %g\n',t1-t0);
 fprintf('CPU time for delaunay  = %g\n',t2-t1);
 %}
-% Example 5: cputime comparion with kd-tree by Steven Michael (mex file) 
-% <a href="http://www.mathworks.com/matlabcentral/fileexchange/loadFile.do?objectId=7030&objectType=file">kd-tree by Steven Michael</a> 
+% Example 5: cputime comparion with kd-tree by Steven Michael (mex file)
+% <a href="http://www.mathworks.com/matlabcentral/fileexchange/loadFile.do?objectId=7030&objectType=file">kd-tree by Steven Michael</a>
 %{
 Q=randn(10000,10);
 R=randn(500,10);
@@ -90,14 +90,20 @@ fprintf('CPU time for delaunay  = %g\n',t2-t1);
 %}
 
 % Check inputs
-[Q,R,K,fident] = parseinputs(varargin{:});
+[Q,R,K,fident, refer, RIDX] = parseinputs(varargin{:});
 
 % Check outputs
 error(nargoutchk(0,2,nargout));
 
 % C2 = sum(C.*C,2)';
 [N,M] = size(Q);
-L=size(R,1);
+
+if (refer)
+    L = size(RIDX,2);
+else
+    L=size(R,1);
+end
+
 D=zeros(N,K);
 idx = D;
 
@@ -112,47 +118,79 @@ idx = D;
 % end
 
 if K==1
-%     [D, idx] = min(dist);
-%     D = D';
-%     idx = idx';
-    for k=1:N
-        d=zeros(L,1);
-        for t=1:M
-            d=d+(R(:,t)-Q(k,t)).^2;
+    %     [D, idx] = min(dist);
+    %     D = D';
+    %     idx = idx';
+    if refer
+        for k=1:N
+            d=zeros(L,1);
+            DR = RIDX(k,:);
+            for t=1:M
+                d=d+(R(DR,t)-Q(k,t)).^2;
+            end
+            if fident
+                d(k)=inf;
+            end
+            [s,t]=min(d);
+            idx(k)=DR(t);
+            D(k)=s;
         end
-        if fident
-            d(k)=inf;
+    else
+        for k=1:N
+            d=zeros(L,1);
+            for t=1:M
+                d=d+(R(:,t)-Q(k,t)).^2;
+            end
+            if fident
+                d(k)=inf;
+            end
+            [s,t]=min(d);
+            idx(k)=t;
+            D(k)=s;
         end
-        [s,t]=min(d);        
-        idx(k)=t;
-        D(k)=s;
     end
-else         
-%     [D, idx] = mink(dist, K, 1,'sorting',false);
-%     D = D';
-%     idx = idx';
-    
-    for k=1:N
-        d=zeros(L,1);
-        for t=1:M
-            d=d+(R(:,t)-Q(k,t)).^2;
+else
+    %     [D, idx] = mink(dist, K, 1,'sorting',false);
+    %     D = D';
+    %     idx = idx';
+    if refer
+        for k=1:N
+            d=zeros(L,1);
+            DR = RIDX(k,:);
+            for t=1:M
+                d=d+(R(DR,t)-Q(k,t)).^2;
+            end
+            if fident
+                d(k)=inf;
+            end
+            %[s,t]=sort(d); % O(L*log(L))
+            [s, t] = mink(d, K, 1, 'sorting', false); % O(L+K*log(K))
+            idx(k,:)=DR(t);
+            D(k,:)=s;
         end
-        if fident
-            d(k)=inf;
+    else
+        for k=1:N
+            d=zeros(L,1);
+            for t=1:M
+                d=d+(R(:,t)-Q(k,t)).^2;
+            end
+            if fident
+                d(k)=inf;
+            end
+            %[s,t]=sort(d); % O(L*log(L))
+            [s, t] = mink(d, K, 1, 'sorting', false); % O(L+K*log(K))
+            idx(k,:)=t(1:K);
+            D(k,:)=s(1:K);
         end
-        %[s,t]=sort(d); % O(L*log(L))
-        [s, t] = mink(d, K, 1, 'sorting', false); % O(L+K*log(K))
-        idx(k,:)=t(1:K);
-        D(k,:)=s(1:K);
     end
 end
 if nargout>1
     D=sqrt(D);
 end
 
-function [Q,R,K,fident] = parseinputs(varargin)
+function [Q,R,K,fident, refer, RIDX] = parseinputs(varargin)
 % Check input and output
-error(nargchk(1,3,nargin));
+error(nargchk(1,4,nargin));
 
 Q=varargin{1};
 
@@ -177,4 +215,12 @@ if nargin<3
     K=1;
 else
     K=varargin{3};
+end
+
+if nargin<4
+    refer = false;
+    RIDX = [];
+else
+    refer = true;
+    RIDX = varargin{4};
 end
