@@ -1,3 +1,4 @@
+* Enhance numerical stability
 * Try different filter
 * Clear out noise point during matrix assembly
 * Add efficient KNN/ANN 

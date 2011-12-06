@@ -1,6 +1,6 @@
 %% configuration
 data = dlmread('data/lett.data');
-projdim = 16;
+projdim = 15;
 knearest = 1;
 EMitermax = 10;
 trainprop = .85;

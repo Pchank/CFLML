@@ -4,8 +4,11 @@ function [M MIDX X G]= CFLML( varargin)
 % Examples
 
 
-INNER_CUT = 1E-5; % to cut inner point within class
+INNER_CUT = 1E-3; % to cut inner point within class
 MAX_TRACE_ITER = 3; % max trace iteration
+PENDING_PROB = .9;
+
+fprintf(1,'--------------------------------------\nEM-CFLML\n');
 
 
 % KNN search is very crucial for the efficient implement of this algorithm
@@ -68,7 +71,6 @@ sigmanew = zeros(num,1); % estimated neighbor radius of instance w.r.t new metri
 prob = ones(num,1); % neighbor emphasis weight of instance
 MIDX = ones(num,1); % metric label of instance
 active = true(num,1); % active tag of instance
-updated = false(num,1); % updated tag of instance
 
 % size of neighbor estimated. For large size of data, a small neighbor is
 % enough, like 10 times k-nearests.
@@ -84,9 +86,7 @@ validcandidateidx = cell(0);
 validclasscandidate = zeros(vnum, 0);
 
 
-% status output
-strtmp = sprintf('EM-CFLML\tnca(log)\tvalid(%%)\ttime(s)');
-disp(strtmp);
+
 
 % apply init metric transform
 Y{1} = X*M{1};
@@ -100,13 +100,12 @@ end
 
 % knnsearch to contruct neighbor
 if neighborsize < num 
-    strtmp = sprintf('Start Neighbor Construction ...');
-    fprintf(1, strtmp); tStarted = tic;
+    fprintf('0\tNeighborhood Initialization ...');
+    tStarted = tic;
     XNR = knnsearch(Y{1}, Y{1} ,neighborsize);
     YNR = knnsearch(TotalData*M{1},Y{1},neighborsize); % for valid evalution
     tElapsed = toc(tStarted);
-    strtmp = sprintf('\t%.2fs',tElapsed);
-    disp(strtmp);
+    fprintf(1,'\t%.2fs\n',tElapsed);
 else
     XNR = repmat(1:num, num, 1);
     YNR = repmat(1:num, vnum, 1);
@@ -116,6 +115,8 @@ end
 % the same(or not) labels of neighbor
 ST = G(XNR)==repmat(G, 1, neighborsize);
 
+% status output
+fprintf(1,'   NCA(log)\tVE(%%)\tT(s)\tA\tU\tP\n');
 
 
 
@@ -142,10 +143,12 @@ for count = 1:iteration+1
 
 
     % test if the new metric is more fitted to certain instance
+    updated = false(num,1); % updated tag of instance
+    nonpending = true(num,1); % pending in matrix assembly
+    
     for i=allinstance(active) % only to update active instance
         
         if (sigmanew(i) < 1E-10 )
-            updated(i) = false;
             prob(i) = 0;
             MIDX(i) = count;
             active(i) = false;
@@ -153,24 +156,21 @@ for count = 1:iteration+1
         end       
        
         neighborweightupdate(count, sigmanew(i)); % init
+                                
         
-        weight = wDi/(wDi+wSi);
-        
-        
-        
-        if (weight >= prob(i)) % non-interest metric for instance i
-            updated(i) = false;
-        else
+        if (wDi < prob(i)*(wDi+wSi)) % non-interest metric for instance i                    
             updated(i) = true;
-            prob(i) = weight;            
+            prob(i) = wDi/(wDi+wSi);
             MIDX(i) = count;
         end
         
         % remove inner point and noise point
-        if (wSi<INNER_CUT || wDi < INNER_CUT || weight < INNER_CUT) 
-            prob(i) = 0;
-            updated(i) = false;
+        if (wDi <= INNER_CUT * (wDi+wSi))        
             active(i) = false;
+        end
+        
+        if (prob(i) > PENDING_PROB) %noise point
+            nonpending(i) = false;            
         end
         
     end
@@ -206,8 +206,10 @@ for count = 1:iteration+1
     validcorrectbool = validclass == TotalLabel;
     validtesterr = 1 - mean(validcorrectbool);
     tElapsed = toc(tStart);
-    strtmp=sprintf('Iteration %d\t%.2E\t%.2f\t\t%f', count, sum(log(1-prob)), 100*validtesterr, tElapsed);
-    disp(strtmp);
+    fprintf(1,'%d  %.2E\t%.2f\t%.2f\t%d\t%d\t%d\n', ...
+        count, sum(log(1-prob)), 100*validtesterr, tElapsed, ...
+        sum(active), sum(updated), sum(1-nonpending));
+
     if (validtesterr > validtesterr_backtrace && count ~=1) % overfitting!
         stepsout_count = stepsout_count +1;
         if (stepsout_count >= stepsout_backtrace)
@@ -236,7 +238,7 @@ for count = 1:iteration+1
     
     
     % matrix assembly start  
-    for i=allinstance(active)
+    for i=allinstance(active&nonpending)
         % to prevent degenerate cases like []
         MDi = zeros(dim,dim);
         MSi = zeros(dim,dim);
