@@ -3,6 +3,11 @@ function [M MIDX X G]= CFLML( varargin)
 % Author: Jianbo YE(jbye@cs.hku.hk), Dept of Computer Science, HKU
 % Examples
 
+
+INNER_CUT = 1E-5; % to cut inner point within class
+MAX_TRACE_ITER = 3; % max trace iteration
+
+
 % KNN search is very crucial for the efficient implement of this algorithm
 addpath('knnsearch');% knn implement path
 addpath('count_unique');% useful routine to obtain count of unique;
@@ -67,13 +72,13 @@ updated = false(num,1); % updated tag of instance
 
 % size of neighbor estimated. For large size of data, a small neighbor is
 % enough, like 10 times k-nearests.
-neighborsize = min(num,kn*100); 
+neighborsize = min([num,kn*100, 300]); 
 %XwDi = zeros(num, neighborsize);
 %XwSi = zeros(num, neighborsize);
 
 % backtrace init
 validtesterr_backtrace = 1;
-stepsout_backtrace = 3; % max backtrace iteration
+stepsout_backtrace = MAX_TRACE_ITER; % max backtrace iteration
 stepsout_count = 0;
 validcandidateidx = cell(0);
 validclasscandidate = zeros(vnum, 0);
@@ -86,20 +91,32 @@ disp(strtmp);
 % apply init metric transform
 Y{1} = X*M{1};
 
-tic;
-% knnsearch to contruct neighbor
-XNR = knnsearch(Y{1}, Y{1} ,neighborsize);
-YNR = knnsearch(TotalData*M{1},Y{1},neighborsize); % for valid evalution
-toc;
-
-% the same(or not) labels of neighbor
-ST = G(XNR)==repmat(G, 1, neighborsize);
-
 % bool check for each label
 labelbool = false(num, lnum);
 for iclass = 1:lnum
     labelbool(:,iclass) = (G == labels(iclass));
 end
+%labelcount = sum(labelbool);
+
+% knnsearch to contruct neighbor
+if neighborsize < num 
+    strtmp = sprintf('Start Neighbor Construction ...');
+    fprintf(1, strtmp); tStarted = tic;
+    XNR = knnsearch(Y{1}, Y{1} ,neighborsize);
+    YNR = knnsearch(TotalData*M{1},Y{1},neighborsize); % for valid evalution
+    tElapsed = toc(tStarted);
+    strtmp = sprintf('\t%.2fs',tElapsed);
+    disp(strtmp);
+else
+    XNR = repmat(1:num, num, 1);
+    YNR = repmat(1:num, vnum, 1);
+end
+
+
+% the same(or not) labels of neighbor
+ST = G(XNR)==repmat(G, 1, neighborsize);
+
+
 
 
 for count = 1:iteration+1
@@ -114,13 +131,15 @@ for count = 1:iteration+1
     
     allinstance = 1:num;        
 
-    % compute k-neighbor radius w.r.t new metric
-    for iclass=1:lnum
-        XR = Y{count}(labelbool(:,iclass),:);        
+    % compute k-neighbor radius w.r.t new metric    
+    for iclass=1:lnum        
+        XR = Y{count}(labelbool(:,iclass),:);
         XQ = XR(active(allinstance(labelbool(:,iclass))),:);
-        [~, D] = knnsearch(XQ, XR , kn+1);
-        sigmanew(labelbool(:,iclass)&active) = 2 * (sum(D,2)/kn).^2;
+
+        [~, D] = knnsearch(XQ, XR , kn+1);                                       
+        sigmanew(labelbool(:,iclass)&active) = 2 * (sum(D,2)/kn).^2;        
     end
+
 
     % test if the new metric is more fitted to certain instance
     for i=allinstance(active) % only to update active instance
@@ -139,7 +158,7 @@ for count = 1:iteration+1
         
         
         
-        if (weight > prob(i)) % non-interest metric for instance i
+        if (weight >= prob(i)) % non-interest metric for instance i
             updated(i) = false;
         else
             updated(i) = true;
@@ -147,7 +166,9 @@ for count = 1:iteration+1
             MIDX(i) = count;
         end
         
-        if (wDi < 1E-3 || weight < 1E-3)
+        % remove inner point and noise point
+        if (wSi<INNER_CUT || wDi < INNER_CUT || weight < INNER_CUT) 
+            prob(i) = 0;
             updated(i) = false;
             active(i) = false;
         end
