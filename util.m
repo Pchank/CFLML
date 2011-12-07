@@ -1,9 +1,9 @@
 %% configuration
 data = dlmread('data/lett.data');
 projdim = 15;
-knearest = 1;
-EMitermax = 10;
-trainprop = .85;
+knearest = 3;
+EMitermax = 15;
+trainprop = .80;
 
 repeattime = 1;
 

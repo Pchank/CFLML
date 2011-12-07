@@ -6,7 +6,7 @@ function [M MIDX X G]= CFLML( varargin)
 
 INNER_CUT = 1E-3; % to cut inner point within class
 MAX_TRACE_ITER = 3; % max trace iteration
-PENDING_PROB = .9;
+PENDING_PROB = .99;
 
 fprintf(1,'--------------------------------------\nEM-CFLML\n');
 
@@ -74,7 +74,7 @@ active = true(num,1); % active tag of instance
 
 % size of neighbor estimated. For large size of data, a small neighbor is
 % enough, like 10 times k-nearests.
-neighborsize = min([num,kn*100, 300]); 
+neighborsize = min([num,max(kn*100,300)]); 
 %XwDi = zeros(num, neighborsize);
 %XwSi = zeros(num, neighborsize);
 
@@ -185,7 +185,7 @@ for count = 1:iteration+1
     validclasscandidateweight = zeros(vnum, count);
     for i = 1:count        
         if i==count
-            validcandidateidx{count} = knnsearch(TotalData*M{i}, X*M{i}, kn, YNR);            
+            validcandidateidx{count}= knnsearch(TotalData*M{i}, X*M{i}, kn, YNR);                        
             validclasscandidate(:,count) = zeros(vnum,1);
             for j=1:vnum
                 [classname numclass] = count_unique(G(validcandidateidx{count}(j,:)));
@@ -296,8 +296,10 @@ end
         YD = repmat(Y{midx}(i,:),size(YD,1),1) - YD;
         YS = repmat(Y{midx}(i,:),size(YS,1),1) - YS;
         
-        wDi = sum(exp(-sum(YD.^2,2)/sg));
-        wSi = sum(exp(-sum(YS.^2,2)/sg));       
+        %wDi = sum(exp(-sum(YD.^2,2)/sg));
+        %wSi = sum(exp(-sum(YS.^2,2)/sg));       
+        wDi = sum(1./(1+4 * sum(YD.^2,2).^2/(sg^2)));
+        wSi = sum(1./(1+4 * sum(YS.^2,2).^2/(sg^2)));
     end
 
     function neighborupdate(midx, sg)
@@ -311,8 +313,10 @@ end
         YD = repmat(Y{midx}(i,:),sizeD,1) - YD;
         YS = repmat(Y{midx}(i,:),sizeS,1) - YS;
 
-        WMD = exp(-sum(YD.^2,2)/sg);
-        WMS = exp(-sum(YS.^2,2)/sg);
+        %WMD = exp(-sum(YD.^2,2)/sg);
+        %WMS = exp(-sum(YS.^2,2)/sg);
+        WMD = 1./(1+4 * sum(YD.^2,2).^2/(sg^2));
+        WMS = 1./(1+4 * sum(YS.^2,2).^2/(sg^2));
         
         wDi = sum(WMD);
         wSi = sum(WMS);
