@@ -1,11 +1,11 @@
 %% configuration
-data = dlmread('data/lett.data');
-projdim = 15;
-knearest = 3;
-EMitermax = 3;
-trainprop = .8;
+data = dlmread('data/bals.data');
+projdim = 4;
+knearest = 5;
+EMitermax = 10;
+trainprop = .85;
 
-repeattime = 1;
+repeattime = 100;
 
 %% evaluation bench
 tic;
