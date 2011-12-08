@@ -51,7 +51,7 @@ end
 
 
 % cut data into trainset and validset
-if iteration == 1 % no EM steps, no validation set
+if iteration <= 3 % EM steps less than 3, no validation set
     [X, Xidx] = cutset(TotalData, TotalLabel, 1);    
 else
     [X, Xidx] = cutset(TotalData, TotalLabel, .85);
