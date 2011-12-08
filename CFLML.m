@@ -4,7 +4,7 @@ function [M MIDX X G]= CFLML( varargin)
 % Examples
 
 
-INNER_CUT = 1E-3; % to cut inner point within class
+INNER_CUT = .3; % to cut inner point within class
 MAX_TRACE_ITER = 3; % max trace iteration
 PENDING_PROB = .99;
 
