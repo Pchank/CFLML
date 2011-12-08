@@ -4,7 +4,7 @@ function [M MIDX X G]= CFLML( varargin)
 % Examples
 
 
-INNER_CUT = .3; % to cut inner point within class
+INNER_CUT = .1; % to cut inner point within class
 MAX_TRACE_ITER = 3; % max trace iteration
 PENDING_PROB = .99;
 
@@ -145,6 +145,7 @@ for count = 1:iteration+1
     % test if the new metric is more fitted to certain instance
     updated = false(num,1); % updated tag of instance
     nonpending = true(num,1); % pending in matrix assembly
+    prob_trace = prob;
     
     for i=allinstance(active) % only to update active instance
         
@@ -212,8 +213,9 @@ for count = 1:iteration+1
 
     if (validtesterr > validtesterr_backtrace && count ~=1) % overfitting!
         stepsout_count = stepsout_count +1;
-        if (stepsout_count >= stepsout_backtrace)
-            MIDX = MIDX_backtrace;            
+        MIDX = MIDX_backtrace;
+        prob = prob_trace;
+        if (stepsout_count >= stepsout_backtrace)                        
             break;
         end
     else        
