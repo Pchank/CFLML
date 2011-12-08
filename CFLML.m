@@ -4,7 +4,7 @@ function [M MIDX X G]= CFLML( varargin)
 % Examples
 
 
-INNER_CUT = .1; % to cut inner point within class
+INNER_CUT = .1;%1E-3; % to cut inner point within class
 MAX_TRACE_ITER = 3; % max trace iteration
 PENDING_PROB = .99;
 
@@ -74,7 +74,7 @@ active = true(num,1); % active tag of instance
 
 % size of neighbor estimated. For large size of data, a small neighbor is
 % enough, like 10 times k-nearests.
-neighborsize = min([num,max(kn*100,300)]); 
+neighborsize = min([num,max(kn*100,700)]); 
 %XwDi = zeros(num, neighborsize);
 %XwSi = zeros(num, neighborsize);
 
@@ -84,6 +84,7 @@ stepsout_backtrace = MAX_TRACE_ITER; % max backtrace iteration
 stepsout_count = 0;
 validcandidateidx = cell(0);
 validclasscandidate = zeros(vnum, 0);
+probtrace = ones(num,1);
 
 
 
@@ -211,7 +212,8 @@ for count = 1:iteration+1
         count, sum(log(1-prob)), 100*validtesterr, tElapsed, ...
         sum(active), sum(updated), sum(1-nonpending));
 
-    if (validtesterr > validtesterr_backtrace && count ~=1) % overfitting!
+    if ... %(((sum(log(1-prob)) <= sum(log(1-probtrace)) && validtesterr == validtesterr_backtrace) ||...
+            ((validtesterr >= validtesterr_backtrace) && count ~=1) % overfitting!
         stepsout_count = stepsout_count +1;
         MIDX = MIDX_backtrace;
         prob = prob_trace;
@@ -282,6 +284,7 @@ for count = 1:iteration+1
     end        
     
 end
+
     % append validset to reference set.
     M = M(1:length(M)-stepsout_count);
     X = [X; validdatatrace];    

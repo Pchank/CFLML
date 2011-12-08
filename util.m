@@ -3,7 +3,7 @@ data = dlmread('data/lett.data');
 projdim = 15;
 knearest = 3;
 EMitermax = 15;
-trainprop = .80;
+trainprop = .8;
 
 repeattime = 1;
 
@@ -37,7 +37,13 @@ for i = 1:repeattime;
     
 end
 
+Mknnerr = mean(knnerr);
+Vknnerr = sqrt((mean(knnerr.^2) - Mknnerr.^2)/(repeattime-1));
+Meucknnerr = mean(eucknnerr);
+Veucknnerr = sqrt((mean(eucknnerr.^2) - Meucknnerr.^2)/(repeattime-1));
+
 strtmp = sprintf('k:%d\nEM-CFLML err:%.2f(%.2f)%%\nEuclidean err:%.2f(%.2f)%%', knearest, ...
-    100*mean(knnerr), 100*std(knnerr), 100*mean(eucknnerr), 100*std(eucknnerr));
+    100*Mknnerr, 100*tinv(.99,repeattime)*Vknnerr, ...
+    100*Meucknnerr, 100*tinv(.99,repeattime)*Veucknnerr);
 disp(strtmp);
 toc;
