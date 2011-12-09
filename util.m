@@ -1,11 +1,11 @@
 %% configuration
-data = dlmread('data/bals.data');
-projdim = 4;
+data = dlmread('data/spambase.data');
+projdim = 16;
 knearest = 5;
 EMitermax = 10;
-trainprop = .85;
+trainprop = .80;
 
-repeattime = 100;
+repeattime = 10;
 
 %% evaluation bench
 tic;
@@ -43,7 +43,7 @@ Meucknnerr = mean(eucknnerr);
 Veucknnerr = sqrt((mean(eucknnerr.^2) - Meucknnerr.^2)/(repeattime-1));
 
 strtmp = sprintf('k:%d\nEM-CFLML err:%.2f(%.2f)%%\nEuclidean err:%.2f(%.2f)%%', knearest, ...
-    100*Mknnerr, 100*tinv(.99,repeattime)*Vknnerr, ...
-    100*Meucknnerr, 100*tinv(.99,repeattime)*Veucknnerr);
+    100*Mknnerr, 100*Vknnerr, ...
+    100*Meucknnerr, 100*Veucknnerr);
 disp(strtmp);
 toc;

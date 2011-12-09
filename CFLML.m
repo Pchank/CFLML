@@ -138,8 +138,8 @@ for count = 1:iteration+1
         XR = Y{count}(labelbool(:,iclass),:);
         XQ = XR(active(allinstance(labelbool(:,iclass))),:);
 
-        [~, D] = knnsearch(XQ, XR , kn+1);                                       
-        sigmanew(labelbool(:,iclass)&active) = 2 * (sum(D,2)/kn).^2;        
+        [~, D] = knnsearch(XQ, XR , kn+2);                                       
+        sigmanew(labelbool(:,iclass)&active) = 2 * median(D,2).^2;        
     end
 
 
