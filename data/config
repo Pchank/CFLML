@@ -1,5 +1,5 @@
-data		projdim		kn	iter
-wine		4		10	1
+data		projdim		kn
+wine		4		9
 bals		4		5
 iris		4		5
 spambase	16		5

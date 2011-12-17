@@ -1,12 +1,13 @@
 %% configuration
+restoredefaultpath;
 setpaths;
-data = dlmread('data/bals.data');
-projdim = 4;
+data = dlmread('data/wineqrw.data');
+projdim = 9;
 knearest = 5;
 EMitermax = 10;
 trainprop = .80;
 
-repeattime = 10;
+repeattime = 1;
 
 run = containers.Map(...
     { 'CFLML-1', ...
@@ -26,7 +27,7 @@ run = containers.Map(...
     true, ... Euclidean
     true, ... PCA
     true, ... LDA
-    true, ...  NCA
+    false, ...  NCA
     false, ... MCML (!featured)
     true, ... Boost
     true ... LMNN

@@ -1,0 +1,38 @@
+bals:
+Euclidean err:16.51(1.44)%
+PCA err:14.60(1.51)%
+LDA err:8.02(1.85)%
+NCA err:5.79(3.67)%
+MCML err:NaN(NaN)%
+Boost err:8.17(1.63)%
+LMNN err:13.49(5.46)%
+CFLML-1 err:6.35(2.21)%
+CFLML-3 err:5.71(2.21)%
+EM-CFLML err:5.79(2.08)%
+CFLML best:4.84(2.03)%
+
+wine:
+Euclidean err:29.19(7.30)%
+PCA err:29.46(7.03)%
+LDA err:1.08(1.40)%
+NCA err:14.32(8.26)%
+MCML err:NaN(NaN)%
+Boost err:1.62(2.91)%
+LMNN err:5.41(4.23)%
+CFLML-1 err:2.43(2.69)%
+CFLML-3 err:2.43(2.97)%
+EM-CFLML err:2.70(2.85)%
+CFLML best:1.62(2.28)%
+
+iris:
+Euclidean err:2.33(2.25)%
+PCA err:2.67(2.63)%
+LDA err:2.00(2.81)%
+NCA err:2.67(3.06)%
+MCML err:NaN(NaN)%
+Boost err:3.33(3.14)%
+LMNN err:2.00(2.81)%
+CFLML-1 err:3.00(2.46)%
+CFLML-3 err:3.67(2.92)%
+EM-CFLML err:3.00(3.31)%
+CFLML best:2.00(1.72)%
