@@ -12,8 +12,8 @@ fprintf(1,'--------------------------------------\nEM-CFLML\n');
 
 
 % KNN search is very crucial for the efficient implement of this algorithm
-addpath('knnsearch');% knn implement path
-addpath('count_unique');% useful routine to obtain count of unique;
+%addpath('knnsearch');% knn implement path
+%addpath('count_unique');% useful routine to obtain count of unique;
 
 % Parse input arguments
 error(nargchk(2, 6, nargin));

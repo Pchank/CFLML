@@ -1,11 +1,12 @@
 %% configuration
+setpaths;
 data = dlmread('data/spambase.data');
 projdim = 16;
 knearest = 5;
 EMitermax = 10;
 trainprop = .80;
 
-repeattime = 10;
+repeattime = 1;
 
 %% evaluation bench
 tic;
