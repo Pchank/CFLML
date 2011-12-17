@@ -8,8 +8,6 @@ INNER_CUT = .1;%1E-3; % to cut inner point within class
 MAX_TRACE_ITER = 3; % max trace iteration
 PENDING_PROB = .99;
 
-fprintf(1,'--------------------------------------\nEM-CFLML\n');
-
 
 % KNN search is very crucial for the efficient implement of this algorithm
 %addpath('knnsearch');% knn implement path
