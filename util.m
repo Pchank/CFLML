@@ -1,9 +1,9 @@
 %% configuration
 setpaths;
-data = dlmread('data/isolet.data');
-projdim = 50;
-knearest = 1;
-EMitermax = 20;
+data = dlmread('data/bals.data');
+projdim = 4;
+knearest = 7;
+EMitermax = 10;
 trainprop = .80;
 
 repeattime = 1;
@@ -12,6 +12,8 @@ repeattime = 1;
 tic;
 knnerr = [];
 eucknnerr = [];
+ldaknnerr = [];
+
 for i = 1:repeattime;
     % data input and cut
     dataset = data(:,1:end-1);
@@ -35,7 +37,7 @@ for i = 1:repeattime;
     % Euclidean
     euctestclass = knnclassify(testset, trainset, trainlabel, knearest);      
     eucknnerr(end+1) = 1 - sum(euctestclass == testlabel)/numberoftestinstance;
-    
+        
 end
 
 Mknnerr = mean(knnerr);
@@ -43,7 +45,8 @@ Vknnerr = sqrt((mean(knnerr.^2) - Mknnerr.^2)/(repeattime-1));
 Meucknnerr = mean(eucknnerr);
 Veucknnerr = sqrt((mean(eucknnerr.^2) - Meucknnerr.^2)/(repeattime-1));
 
-strtmp = sprintf('k:%d\nEM-CFLML err:%.2f(%.2f)%%\nEuclidean err:%.2f(%.2f)%%', knearest, ...
+strtmp = sprintf(...
+    'k:%d\nEM-CFLML err:%.2f(%.2f)%%\nEuclidean err:%.2f(%.2f)%%', knearest, ...
     100*Mknnerr, 100*Vknnerr, ...
     100*Meucknnerr, 100*Veucknnerr);
 disp(strtmp);
