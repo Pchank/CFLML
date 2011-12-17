@@ -1,9 +1,9 @@
 %% configuration
 setpaths;
-data = dlmread('data/spambase.data');
-projdim = 16;
-knearest = 5;
-EMitermax = 10;
+data = dlmread('data/isolet.data');
+projdim = 50;
+knearest = 1;
+EMitermax = 20;
 trainprop = .80;
 
 repeattime = 1;
