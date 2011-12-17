@@ -6,7 +6,7 @@ knearest = 5;
 EMitermax = 10;
 trainprop = .80;
 
-repeattime = 1;
+repeattime = 10;
 
 run = containers.Map(...
     { 'CFLML-1', ...
@@ -16,7 +16,9 @@ run = containers.Map(...
     'PCA', ...
     'LDA', ...
     'NCA', ...    
-    'MCML' ...
+    'MCML', ...
+    'Boost', ...
+    'LMNN' ...
     }, ...
     { true, ... CFLML-1
     true, ... CFLML-3
@@ -25,7 +27,9 @@ run = containers.Map(...
     true, ... PCA
     true, ... LDA
     true, ...  NCA
-    false ... MCML (!featured)
+    false, ... MCML (!featured)
+    true, ... Boost
+    true ... LMNN
     });
 %% dimension estimation
 % fprintf(1,'--------------------------------------\nDIM-EST\n');
@@ -37,7 +41,6 @@ run = containers.Map(...
 % fprintf(1,'\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\n', d1,d2,d3,d4,d5);
 
 %% evaluation bench
-tic;
 knnerr_1 = [];
 knnerr_3 = [];
 knnerr_em = [];
@@ -46,6 +49,8 @@ pcaknnerr = [];
 ldaknnerr = [];
 ncaknnerr = [];
 mcmlknnerr = [];
+boostknnerr = [];
+lmnnknnerr = [];
 
 for i = 1:repeattime;
     % data input and cut
@@ -64,7 +69,7 @@ for i = 1:repeattime;
     %% knn classification
     % CFLML-1
     if run('CFLML-1')
-        fprintf(1,'--------------------------------------\nEM-CFLML\n'); tic;
+        fprintf(1,'--------------------------------------\nCFLML-1\n'); tic;
         [M MIDX R RC]= CFLML(trainset, trainlabel, projdim, knearest, eye(dimension), 1);
         testclass = knnclsmm(testset, R, RC, knearest, MIDX, M);
         knnerr_1(end+1) = 1 - sum(testclass == testlabel)/numberoftestinstance;
@@ -72,7 +77,7 @@ for i = 1:repeattime;
     end
     % CFLML-3
     if run('CFLML-3')
-        fprintf(1,'--------------------------------------\nEM-CFLML\n'); tic;
+        fprintf(1,'--------------------------------------\nCFLML-3\n'); tic;
         [M MIDX R RC]= CFLML(trainset, trainlabel, projdim, knearest, eye(dimension), 3);
         testclass = knnclsmm(testset, R, RC, knearest, MIDX, M);
         knnerr_3(end+1) = 1 - sum(testclass == testlabel)/numberoftestinstance;
@@ -85,7 +90,7 @@ for i = 1:repeattime;
         testclass = knnclsmm(testset, R, RC, knearest, MIDX, M);
         knnerr_em(end+1) = 1 - sum(testclass == testlabel)/numberoftestinstance;
         toc;
-    end
+    end        
     % Euclidean
     if run('Euclidean')
         fprintf(1,'--------------------------------------\nEuclidean\n');tic;
@@ -125,7 +130,43 @@ for i = 1:repeattime;
         mcmlknnerr(end+1) = 1 - sum(mcmltestclass == testlabel)/numberoftestinstance;
         toc;        
     end
+    % Boost
+    if run('Boost')
+        cd(BoostPath)
+        fprintf(1,'--------------------------------------\nBoost\n');tic;
+        trn.X = trainset';
+        trn.y = trainlabel';
+        tst.X = testset';
+        tst.y = testlabel';
+        boostknnerr(end+1) = test(trn,  tst);
+        toc;
+        cd(RootPath)
+    end
+    % LMNN
+    if run('LMNN')
+        cd(LMNNPath)
+        restoredefaultpath;
+        setpaths;
+        fprintf(1,'--------------------------------------\nLMNN\n');tic;
+        xTr = trainset';
+        yTr = trainlabel';
+        [L,~]=lmnn2(xTr,yTr,'quiet',1,'maxiter',1000,'validation',0.15,'checkup',0);
+        cd(RootPath)
+        restoredefaultpath;
+        setpaths;        
+        lmnntestclass = knnclassify(testset*L',trainset*L',trainlabel,3);
+        lmnnknnerr(end+1) = 1 - sum(lmnntestclass == testlabel)/numberoftestinstance;
+        toc;        
+    end
 end
+%% evaluation output
+fprintf(1,'--------------------------------------\n');tic;
+% best of CFLML
+knnerr = min([knnerr_1; knnerr_3; knnerr_em]);
+Mknnerr = mean(knnerr);
+Vknnerr = sqrt(repeattime*(mean(knnerr.^2) - Mknnerr.^2)/(repeattime-1));
+
+
 
 Mknnerr_1 = mean(knnerr_1);
 Vknnerr_1 = sqrt(repeattime*(mean(knnerr_1.^2) - Mknnerr_1.^2)/(repeattime-1));
@@ -143,25 +184,34 @@ Mncaknnerr = mean(ncaknnerr);
 Vncaknnerr = sqrt(repeattime*(mean(ncaknnerr.^2) - Mncaknnerr.^2)/(repeattime-1));
 Mmcmlknnerr = mean(mcmlknnerr);
 Vmcmlknnerr = sqrt(repeattime*(mean(mcmlknnerr.^2) - Mmcmlknnerr.^2)/(repeattime-1));
+Mboostknnerr = mean(boostknnerr);
+Vboostknnerr = sqrt(repeattime*(mean(boostknnerr.^2) - Mboostknnerr.^2)/(repeattime-1));
+Mlmnnknnerr = mean(lmnnknnerr);
+Vlmnnknnerr = sqrt(repeattime*(mean(lmnnknnerr.^2) - Mlmnnknnerr.^2)/(repeattime-1));
 
 
-fprintf(['k:%d\n', ...
+fprintf([...
     'Euclidean err:%.2f(%.2f)%%\n',...
     'PCA err:%.2f(%.2f)%%\n',...
     'LDA err:%.2f(%.2f)%%\n',...
     'NCA err:%.2f(%.2f)%%\n',...
     'MCML err:%.2f(%.2f)%%\n',...
+    'Boost err:%.2f(%.2f)%%\n',...
+    'LMNN err:%.2f(%.2f)%%\n',...
     'CFLML-1 err:%.2f(%.2f)%%\n',...
     'CFLML-3 err:%.2f(%.2f)%%\n',...
-    'EM-CFLML err:%.2f(%.2f)%%\n'], ...
-    knearest, ...
+    'EM-CFLML err:%.2f(%.2f)%%\n', ...
+    'CFLML best:%.2f(%.2f)%%\n'], ...
     100*Meucknnerr, 100*Veucknnerr,...
     100*Mpcaknnerr, 100*Vpcaknnerr,...
     100*Mldaknnerr, 100*Vldaknnerr,...
     100*Mncaknnerr, 100*Vncaknnerr,...
     100*Mmcmlknnerr, 100*Vmcmlknnerr,...
+    100*Mboostknnerr, 100*Vboostknnerr, ...
+    100*Mlmnnknnerr, 100*Vlmnnknnerr,...
     100*Mknnerr_1, 100*Vknnerr_1,...
     100*Mknnerr_3, 100*Vknnerr_3,...
-    100*Mknnerr_em, 100*Vknnerr_em ...
+    100*Mknnerr_em, 100*Vknnerr_em, ...
+    100*Mknnerr, 100*Vknnerr ...
     );
 toc;

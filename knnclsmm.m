@@ -10,8 +10,6 @@ if nargin>6
 end
 
 % KNNCLSMM knn classifier for multiple metric
-addpath('knnsearch');
-addpath('count_unique');
 
 nt = size(test,1);
 testclasscandidate = zeros(nt, length(M));
