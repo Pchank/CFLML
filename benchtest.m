@@ -1,10 +1,10 @@
 %% configuration
 restoredefaultpath;
 setpaths;
-data = dlmread('data/wineqrw.data');
-projdim = 9;
+data = dlmread('data/isolet.data');
+projdim = 70;
 knearest = 5;
-EMitermax = 10;
+EMitermax = 20;
 trainprop = .80;
 
 repeattime = 1;
@@ -151,7 +151,7 @@ for i = 1:repeattime;
         fprintf(1,'--------------------------------------\nLMNN\n');tic;
         xTr = trainset';
         yTr = trainlabel';
-        [L,~]=lmnn2(xTr,yTr,'quiet',1,'maxiter',1000,'validation',0.15,'checkup',0);
+        [L,~]=lmnn2(xTr,yTr,'quiet',3,'maxiter',1000,'validation',0.15,'checkup',0);
         cd(RootPath)
         restoredefaultpath;
         setpaths;        
