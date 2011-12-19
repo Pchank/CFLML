@@ -36,3 +36,81 @@ CFLML-1 err:3.00(2.46)%
 CFLML-3 err:3.67(2.92)%
 EM-CFLML err:3.00(3.31)%
 CFLML best:2.00(1.72)%
+
+wineqrw:
+Euclidean err:5.95(0.75)%
+PCA err:5.95(0.75)%
+LDA err:0.50(0.23)%
+NCA err:NaN(NaN)%
+MCML err:NaN(NaN)%
+Boost err:1.07(0.30)%
+LMNN err:1.77(0.47)%
+CFLML-1 err:1.75(1.08)%
+CFLML-3 err:1.73(0.63)%
+EM-CFLML err:1.55(0.57)%
+CFLML best:1.33(0.50)%
+
+vehicle:
+Euclidean err:32.87(2.66)%
+PCA err:32.92(2.80)%
+LDA err:23.04(3.01)%
+NCA err:25.73(3.23)%
+MCML err:NaN(NaN)%
+Boost err:18.95(2.12)%
+LMNN err:21.40(3.15)%
+CFLML-1 err:19.24(2.00)%
+CFLML-3 err:19.77(3.03)%
+EM-CFLML err:19.88(2.67)%
+CFLML best:18.19(2.03)%
+
+wdbc:
+Euclidean err:7.74(1.71)%
+PCA err:7.74(1.71)%
+LDA err:4.43(0.86)%
+NCA err:6.61(2.29)%
+MCML err:NaN(NaN)%
+Boost err:4.35(1.83)%
+LMNN err:8.35(2.02)%
+CFLML-1 err:6.09(1.59)%
+CFLML-3 err:5.48(1.69)%
+EM-CFLML err:6.87(2.07)%
+CFLML best:5.30(1.45)%
+
+spambase:
+Euclidean err:19.65(1.23)%
+PCA err:19.97(0.96)%
+LDA err:9.33(0.99)%
+NCA err:NaN(NaN)%
+MCML err:NaN(NaN)%
+Boost err:18.43(4.37)%
+LMNN err:10.72(2.70)%
+CFLML-1 err:7.97(0.75)%
+CFLML-3 err:8.45(0.62)%
+EM-CFLML err:7.98(0.59)%
+CFLML best:7.74(0.54)%
+
+letters:
+Euclidean err:4.29(NaN)%
+PCA err:3.91(NaN)%
+LDA err:3.86(NaN)%
+NCA err:NaN(NaN)%
+MCML err:NaN(NaN)%
+Boost err:2.82(NaN)%
+LMNN err:3.14(NaN)%
+CFLML-1 err:3.19(NaN)%
+CFLML-3 err:2.99(NaN)%
+EM-CFLML err:3.19(NaN)%
+CFLML best:2.99(NaN)%
+
+isolet:
+Euclidean err:11.67(NaN)%
+PCA err:12.76(NaN)%
+LDA err:4.74(NaN)%
+NCA err:NaN(NaN)%
+MCML err:NaN(NaN)%
+Boost err:4.68(NaN)%
+LMNN err:5.38(NaN)%
+CFLML-1 err:5.32(NaN)%
+CFLML-3 err:5.32(NaN)%
+EM-CFLML err:4.87(NaN)%
+CFLML best:4.87(NaN)%
