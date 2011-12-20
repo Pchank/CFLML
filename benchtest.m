@@ -1,9 +1,9 @@
 %% configuration
 restoredefaultpath;
 setpaths;
-data = dlmread('data/isolet.data');
-projdim = 70;
-knearest = 5;
+data = dlmread('data/box.data');
+projdim = 2;
+knearest = 3;
 EMitermax = 20;
 trainprop = .80;
 
@@ -27,7 +27,7 @@ run = containers.Map(...
     true, ... Euclidean
     true, ... PCA
     true, ... LDA
-    false, ...  NCA
+    true, ...  NCA
     false, ... MCML (!featured)
     true, ... Boost
     true ... LMNN
