@@ -1,0 +1,4 @@
+cd knnsearch/
+minmax_install
+cd ..
+benchtest

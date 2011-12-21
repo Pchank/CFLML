@@ -1,9 +1,9 @@
 %% configuration
 restoredefaultpath;
 setpaths;
-data = dlmread('data/box.data');
-projdim = 2;
-knearest = 3;
+data = dlmread('data/wine.data');
+projdim = 4;
+knearest = 9;
 EMitermax = 20;
 trainprop = .80;
 

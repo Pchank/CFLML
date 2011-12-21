@@ -1,5 +1,5 @@
 function [M MIDX X G]= CFLML( varargin)
-% Expectation-Maximization Closed-Form Local Metric Learning
+% Multiple Closed-Form Local Metric Learning (in progress)
 % Author: Jianbo YE(jbye@cs.hku.hk), Dept of Computer Science, HKU
 % Examples
 
