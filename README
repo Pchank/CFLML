@@ -1,3 +1,9 @@
+*Technical Report*
+Jianbo Ye, Multiple Closed-Form Local Metric Learning for K-Nearest Neighbor Classifier
+http://arxiv.org/abs/1311.3157, 12 Nov 2013
+
+
+*Quick Start*
 cd knnsearch/
 minmax_install
 cd ..
